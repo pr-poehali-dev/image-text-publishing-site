@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,13 +11,24 @@ import type { Publication } from '@/pages/MainApp';
 interface CreatePublicationProps {
   onCreatePublication: (publication: Omit<Publication, 'id' | 'timestamp' | 'comments' | 'isFavorite'>) => void;
   author: string;
+  editMode?: boolean;
+  initialData?: Publication;
+  onCancel?: () => void;
 }
 
-const CreatePublication = ({ onCreatePublication, author }: CreatePublicationProps) => {
+const CreatePublication = ({ onCreatePublication, author, editMode = false, initialData, onCancel }: CreatePublicationProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (editMode && initialData) {
+      setTitle(initialData.title);
+      setContent(initialData.content);
+      setImageUrl(initialData.image || '');
+    }
+  }, [editMode, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,21 +54,21 @@ const CreatePublication = ({ onCreatePublication, author }: CreatePublicationPro
     setImageUrl('');
 
     toast({
-      title: 'Публикация создана',
-      description: 'Ваша публикация успешно добавлена в ленту',
+      title: editMode ? 'Публикация обновлена' : 'Публикация создана',
+      description: editMode ? 'Изменения успешно сохранены' : 'Ваша публикация успешно добавлена в ленту',
     });
   };
 
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Icon name="PenSquare" className="text-primary" size={28} />
-        <h2 className="text-3xl font-bold">Создать публикацию</h2>
+        <Icon name={editMode ? 'Edit' : 'PenSquare'} className="text-primary" size={28} />
+        <h2 className="text-3xl font-bold">{editMode ? 'Редактировать публикацию' : 'Создать публикацию'}</h2>
       </div>
 
       <Card className="border-border/50 animate-fade-in">
         <CardHeader>
-          <CardTitle>Новая публикация</CardTitle>
+          <CardTitle>{editMode ? 'Редактирование' : 'Новая публикация'}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -111,22 +122,34 @@ const CreatePublication = ({ onCreatePublication, author }: CreatePublicationPro
 
             <div className="flex gap-3">
               <Button type="submit" className="gap-2">
-                <Icon name="Send" size={16} />
-                Опубликовать
+                <Icon name={editMode ? 'Save' : 'Send'} size={16} />
+                {editMode ? 'Сохранить' : 'Опубликовать'}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setTitle('');
-                  setContent('');
-                  setImageUrl('');
-                }}
-                className="gap-2"
-              >
-                <Icon name="X" size={16} />
-                Очистить
-              </Button>
+              {editMode ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  className="gap-2"
+                >
+                  <Icon name="X" size={16} />
+                  Отмена
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setTitle('');
+                    setContent('');
+                    setImageUrl('');
+                  }}
+                  className="gap-2"
+                >
+                  <Icon name="X" size={16} />
+                  Очистить
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>

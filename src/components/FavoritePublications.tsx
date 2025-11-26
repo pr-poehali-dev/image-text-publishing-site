@@ -5,14 +5,20 @@ import type { Publication } from '@/pages/MainApp';
 
 interface FavoritePublicationsProps {
   publications: Publication[];
+  currentUser: string;
   onAddComment: (publicationId: number, comment: string) => void;
   onToggleFavorite: (publicationId: number) => void;
+  onEdit: (publication: Publication) => void;
+  onDelete: (publicationId: number) => void;
 }
 
 const FavoritePublications = ({
   publications,
+  currentUser,
   onAddComment,
   onToggleFavorite,
+  onEdit,
+  onDelete,
 }: FavoritePublicationsProps) => {
   return (
     <div className="max-w-3xl mx-auto">
@@ -24,8 +30,11 @@ const FavoritePublications = ({
       {publications.length > 0 ? (
         <PublicationFeed
           publications={publications}
+          currentUser={currentUser}
           onAddComment={onAddComment}
           onToggleFavorite={onToggleFavorite}
+          onEdit={onEdit}
+          onDelete={onDelete}
         />
       ) : (
         <Card className="border-border/50 animate-fade-in">

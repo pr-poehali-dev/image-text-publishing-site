@@ -4,18 +4,39 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import Icon from '@/components/ui/icon';
 import type { Publication } from '@/pages/MainApp';
 
 interface PublicationFeedProps {
   publications: Publication[];
+  currentUser: string;
   onAddComment: (publicationId: number, comment: string) => void;
   onToggleFavorite: (publicationId: number) => void;
+  onEdit: (publication: Publication) => void;
+  onDelete: (publicationId: number) => void;
 }
 
-const PublicationFeed = ({ publications, onAddComment, onToggleFavorite }: PublicationFeedProps) => {
+const PublicationFeed = ({ publications, currentUser, onAddComment, onToggleFavorite, onEdit, onDelete }: PublicationFeedProps) => {
   const [commentInputs, setCommentInputs] = useState<Record<number, string>>({});
   const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [publicationToDelete, setPublicationToDelete] = useState<number | null>(null);
 
   const handleCommentSubmit = (publicationId: number) => {
     const comment = commentInputs[publicationId]?.trim();
@@ -30,6 +51,19 @@ const PublicationFeed = ({ publications, onAddComment, onToggleFavorite }: Publi
       ...expandedComments,
       [publicationId]: !expandedComments[publicationId],
     });
+  };
+
+  const handleDeleteClick = (publicationId: number) => {
+    setPublicationToDelete(publicationId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (publicationToDelete) {
+      onDelete(publicationToDelete);
+      setPublicationToDelete(null);
+      setDeleteDialogOpen(false);
+    }
   };
 
   return (
@@ -60,14 +94,38 @@ const PublicationFeed = ({ publications, onAddComment, onToggleFavorite }: Publi
                   </p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onToggleFavorite(pub.id)}
-                className="text-primary"
-              >
-                <Icon name={pub.isFavorite ? 'Star' : 'StarOff'} size={20} />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onToggleFavorite(pub.id)}
+                  className="text-primary"
+                >
+                  <Icon name={pub.isFavorite ? 'Star' : 'StarOff'} size={20} />
+                </Button>
+                {pub.author === currentUser && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Icon name="MoreVertical" size={20} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(pub)} className="gap-2">
+                        <Icon name="Edit" size={16} />
+                        Редактировать
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteClick(pub.id)}
+                        className="gap-2 text-destructive"
+                      >
+                        <Icon name="Trash2" size={16} />
+                        Удалить
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           </CardHeader>
 
@@ -142,6 +200,23 @@ const PublicationFeed = ({ publications, onAddComment, onToggleFavorite }: Publi
           </CardFooter>
         </Card>
       ))}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить публикацию?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие нельзя отменить. Публикация будет удалена навсегда.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

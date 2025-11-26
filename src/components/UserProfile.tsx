@@ -1,18 +1,47 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import Icon from '@/components/ui/icon';
 import type { Publication } from '@/pages/MainApp';
 
 interface UserProfileProps {
   user: { username: string; email: string };
   publications: Publication[];
+  onEdit: (publication: Publication) => void;
+  onDelete: (publicationId: number) => void;
 }
 
-const UserProfile = ({ user, publications }: UserProfileProps) => {
+const UserProfile = ({ user, publications, onEdit, onDelete }: UserProfileProps) => {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [publicationToDelete, setPublicationToDelete] = useState<number | null>(null);
   const userPublications = publications.filter((pub) => pub.author === user.username);
   const totalComments = publications.reduce((acc, pub) => acc + pub.comments.length, 0);
+
+  const handleDeleteClick = (publicationId: number) => {
+    setPublicationToDelete(publicationId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (publicationToDelete) {
+      onDelete(publicationToDelete);
+      setPublicationToDelete(null);
+      setDeleteDialogOpen(false);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -97,15 +126,37 @@ const UserProfile = ({ user, publications }: UserProfileProps) => {
                       />
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Icon name="Calendar" size={12} />
-                      {pub.timestamp.toLocaleDateString('ru-RU')}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Icon name="MessageSquare" size={12} />
-                      {pub.comments.length} комментариев
-                    </span>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Icon name="Calendar" size={12} />
+                        {pub.timestamp.toLocaleDateString('ru-RU')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Icon name="MessageSquare" size={12} />
+                        {pub.comments.length} комментариев
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(pub)}
+                        className="gap-1"
+                      >
+                        <Icon name="Edit" size={14} />
+                        Редактировать
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteClick(pub.id)}
+                        className="gap-1 text-destructive hover:text-destructive"
+                      >
+                        <Icon name="Trash2" size={14} />
+                        Удалить
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -125,6 +176,23 @@ const UserProfile = ({ user, publications }: UserProfileProps) => {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить публикацию?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие нельзя отменить. Публикация будет удалена навсегда.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

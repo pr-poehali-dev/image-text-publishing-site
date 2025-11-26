@@ -34,7 +34,8 @@ export interface Comment {
 }
 
 const MainApp = ({ user, onLogout }: MainAppProps) => {
-  const [currentView, setCurrentView] = useState<'feed' | 'create' | 'profile' | 'search' | 'favorites'>('feed');
+  const [currentView, setCurrentView] = useState<'feed' | 'create' | 'profile' | 'search' | 'favorites' | 'edit'>('feed');
+  const [editingPublication, setEditingPublication] = useState<Publication | null>(null);
   const [publications, setPublications] = useState<Publication[]>([
     {
       id: 1,
@@ -114,6 +115,29 @@ const MainApp = ({ user, onLogout }: MainAppProps) => {
         pub.id === publicationId ? { ...pub, isFavorite: !pub.isFavorite } : pub
       )
     );
+  };
+
+  const handleEditPublication = (publication: Publication) => {
+    setEditingPublication(publication);
+    setCurrentView('edit');
+  };
+
+  const handleUpdatePublication = (updatedPub: Omit<Publication, 'id' | 'timestamp' | 'comments' | 'isFavorite'>) => {
+    if (editingPublication) {
+      setPublications(
+        publications.map((pub) =>
+          pub.id === editingPublication.id
+            ? { ...pub, title: updatedPub.title, content: updatedPub.content, image: updatedPub.image }
+            : pub
+        )
+      );
+      setEditingPublication(null);
+      setCurrentView('feed');
+    }
+  };
+
+  const handleDeletePublication = (publicationId: number) => {
+    setPublications(publications.filter((pub) => pub.id !== publicationId));
   };
 
   const favoritePublications = publications.filter((pub) => pub.isFavorite);
@@ -197,20 +221,45 @@ const MainApp = ({ user, onLogout }: MainAppProps) => {
         {currentView === 'feed' && (
           <PublicationFeed
             publications={publications}
+            currentUser={user.username}
             onAddComment={handleAddComment}
             onToggleFavorite={handleToggleFavorite}
+            onEdit={handleEditPublication}
+            onDelete={handleDeletePublication}
           />
         )}
         {currentView === 'create' && (
           <CreatePublication onCreatePublication={handleCreatePublication} author={user.username} />
         )}
-        {currentView === 'profile' && <UserProfile user={user} publications={publications} />}
+        {currentView === 'edit' && editingPublication && (
+          <CreatePublication
+            onCreatePublication={handleUpdatePublication}
+            author={user.username}
+            editMode
+            initialData={editingPublication}
+            onCancel={() => {
+              setEditingPublication(null);
+              setCurrentView('feed');
+            }}
+          />
+        )}
+        {currentView === 'profile' && (
+          <UserProfile
+            user={user}
+            publications={publications}
+            onEdit={handleEditPublication}
+            onDelete={handleDeletePublication}
+          />
+        )}
         {currentView === 'search' && <SearchPublications publications={publications} />}
         {currentView === 'favorites' && (
           <FavoritePublications
             publications={favoritePublications}
+            currentUser={user.username}
             onAddComment={handleAddComment}
             onToggleFavorite={handleToggleFavorite}
+            onEdit={handleEditPublication}
+            onDelete={handleDeletePublication}
           />
         )}
       </main>
